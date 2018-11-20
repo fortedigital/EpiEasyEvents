@@ -11,11 +11,11 @@ namespace ForteDigital.EpiEasyEvents
     public abstract class ContentEventHandlersModule : IInitializableModule, IConfigurableModule
     {
         private IEnumerable<IContentEventHandler> contentEventHandlers;
-        private readonly Assembly eventHandlersAssembly;
+        private readonly Assembly[] eventHandlersAssemblies;
 
-        protected ContentEventHandlersModule(Assembly eventHandlersAssembly)
+        protected ContentEventHandlersModule(params Assembly[] eventHandlersAssemblies)
         {
-            this.eventHandlersAssembly = eventHandlersAssembly;
+            this.eventHandlersAssemblies = eventHandlersAssemblies;
         }
         
         public void Initialize(InitializationEngine context)
@@ -120,7 +120,11 @@ namespace ForteDigital.EpiEasyEvents
         {
             context.StructureMap().Configure(c => c.Scan(a =>
             {
-                a.Assembly(this.eventHandlersAssembly);
+                foreach (var assembly in this.eventHandlersAssemblies)
+                {
+                    a.Assembly(assembly);                    
+                }
+                
                 a.AddAllTypesOf<IContentEventHandler>();
             }));
         }
