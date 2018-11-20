@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpiEasyEvents", "EpiEasyEvents\EpiEasyEvents.csproj", "{5B79D62F-5D9B-4C2C-9885-6560E030E255}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5B79D62F-5D9B-4C2C-9885-6560E030E255}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B79D62F-5D9B-4C2C-9885-6560E030E255}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B79D62F-5D9B-4C2C-9885-6560E030E255}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B79D62F-5D9B-4C2C-9885-6560E030E255}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A673EE7-8E3E-42B1-88F8-02A1B9BFA91C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A673EE7-8E3E-42B1-88F8-02A1B9BFA91C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A673EE7-8E3E-42B1-88F8-02A1B9BFA91C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A673EE7-8E3E-42B1-88F8-02A1B9BFA91C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
