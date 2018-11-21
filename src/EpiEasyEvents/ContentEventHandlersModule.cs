@@ -345,10 +345,55 @@ namespace ForteDigital.EpiEasyEvents
                 handler.OnContentPublishing(e.Content);
             }
         }
-        
+
         public void Uninitialize(InitializationEngine context)
         {
-            
+            context.Locate.ContentEvents().CheckedInContent -= ModelModule_CheckedInContent;
+            context.Locate.ContentEvents().CheckingInContent -= ModelModule_CheckingInContent;
+
+            context.Locate.ContentEvents().CheckedOutContent -= ModelModule_CheckedOutContent;
+            context.Locate.ContentEvents().CheckingOutContent -= ModelModule_CheckingOutContent;
+
+            context.Locate.ContentEvents().CreatedContentLanguage -= ModelModule_CreatedContentLanguage;
+            context.Locate.ContentEvents().CreatingContentLanguage -= ModelModule_CreatingContentLanguage;
+
+            context.Locate.ContentEvents().CreatedContent -= ModelModule_CreatedContent;
+            context.Locate.ContentEvents().CreatingContent -= ModelModule_CreatingContent;
+
+            context.Locate.ContentEvents().DeletedContent -= ModelModule_DeletedContent;
+            context.Locate.ContentEvents().DeletingContent -= ModelModule_DeletingContent;
+
+            context.Locate.ContentEvents().DeletedContentLanguage -= ModelModule_DeletedContentLanguage;
+            context.Locate.ContentEvents().DeletingContentLanguage -= ModelModule_DeletingContentLanguage;
+
+            context.Locate.ContentEvents().DeletedContentVersion -= ModelModule_DeletedContentVersion;
+            context.Locate.ContentEvents().DeletingContentVersion -= ModelModule_DeletingContentVersion;
+
+            context.Locate.ContentEvents().LoadingContent -= ModelModule_LoadingContent;
+            context.Locate.ContentEvents().LoadedContent -= ModelModule_LoadedContent;
+
+            context.Locate.ContentEvents().LoadingDefaultContent -= ModelModule_LoadingDefaultContent;
+            context.Locate.ContentEvents().LoadedDefaultContent -= ModelModule_LoadedDefaultContent;
+
+            context.Locate.ContentEvents().FailedLoadingContent -= ModelModule_FailedLoadingContent;
+
+            context.Locate.ContentEvents().MovingContent -= ModelModule_MovingContent;
+            context.Locate.ContentEvents().MovedContent -= ModelModule_MovedContent;
+
+            context.Locate.ContentEvents().PublishingContent -= ModelModule_PublishingContent;
+            context.Locate.ContentEvents().PublishedContent -= ModelModule_PublishedContent;
+
+            context.Locate.ContentEvents().RejectedContent -= ModelModule_RejectedContent;
+            context.Locate.ContentEvents().RejectingContent -= ModelModule_RejectingContent;
+
+            context.Locate.ContentEvents().RequestedApproval -= ModelModule_RequestedApproval;
+            context.Locate.ContentEvents().RequestingApproval -= ModelModule_RequestingApproval;
+
+            context.Locate.ContentEvents().SavingContent -= ModelModule_SavingContent;
+            context.Locate.ContentEvents().SavedContent -= ModelModule_SavedContent;
+
+            context.Locate.ContentEvents().ScheduledContent -= ModelModule_ScheduledContent;
+            context.Locate.ContentEvents().SchedulingContent -= ModelModule_SchedulingContent;
         }
 
         public void ConfigureContainer(ServiceConfigurationContext context)
