@@ -6,13 +6,11 @@
     <PropertyGroup>
         <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
         <PackageId>Forte.EpiEasyEvents</PackageId>
-        <Authors></Authors>
         <Company>Forte_ Digital</Company>
         <Copyright>Copyright $(CurrentYear)</Copyright>
         <PackageDescription>Helpers classes to easily implement handlers for EpiServer events</PackageDescription>
-        <PackageVersion>1.0.0.0$(CIBuildNumber)</PackageVersion>
+        <PackageVersion>1.0.0$(CIBuildNumber)</PackageVersion>
         
-        <PackageReleaseNotes></PackageReleaseNotes>
         <PackageTags>episerver events</PackageTags>
         
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -27,8 +25,8 @@
         <IncludeSource>true</IncludeSource>
 
         <!--do not change unless you want to deal with assembly redirects-->
-        <AssemblyVersion>1.0.0.0</AssemblyVersion>
-        <FileVersion>1.0.0.0</FileVersion>
+        <AssemblyVersion>1.0.0$(CIBuildNumber)</AssemblyVersion>
+        <FileVersion>1.0.0$(CIBuildNumber)</FileVersion>
         <AssemblyName>ForteDigital.EpiEasyEvents</AssemblyName>
         <RootNamespace>ForteDigital.EpiEasyEvents</RootNamespace>
     </PropertyGroup>
