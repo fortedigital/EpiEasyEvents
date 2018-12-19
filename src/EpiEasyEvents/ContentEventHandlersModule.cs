@@ -1,399 +1,316 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.ServiceLocation;
+using Forte.EpiEasyEvents.EventHandlers;
+using StructureMap;
+using StructureMap.Graph;
+using StructureMap.Graph.Scanning;
+using StructureMap.TypeRules;
 
-namespace ForteDigital.EpiEasyEvents
+namespace Forte.EpiEasyEvents
 {
     public abstract class ContentEventHandlersModule : IInitializableModule, IConfigurableModule
     {
-        private IEnumerable<IContentEventHandler> contentEventHandlers;
         private readonly Assembly[] eventHandlersAssemblies;
+        private IServiceLocator serviceLocator;
 
         protected ContentEventHandlersModule(params Assembly[] eventHandlersAssemblies)
         {
             this.eventHandlersAssemblies = eventHandlersAssemblies;
         }
-        
+
         public void Initialize(InitializationEngine context)
         {
-            this.contentEventHandlers = context.Locate.Advanced.GetAllInstances<IContentEventHandler>();
+            this.serviceLocator = context.Locate.Advanced;
 
-            context.Locate.ContentEvents().CheckedInContent +=  ModelModule_CheckedInContent;
-            context.Locate.ContentEvents().CheckingInContent +=  ModelModule_CheckingInContent;
-            
-            context.Locate.ContentEvents().CheckedOutContent +=  ModelModule_CheckedOutContent;
-            context.Locate.ContentEvents().CheckingOutContent +=  ModelModule_CheckingOutContent;
-            
-            context.Locate.ContentEvents().CreatedContentLanguage +=  ModelModule_CreatedContentLanguage;
-            context.Locate.ContentEvents().CreatingContentLanguage +=  ModelModule_CreatingContentLanguage;
-            
-            context.Locate.ContentEvents().CreatedContent += ModelModule_CreatedContent;
-            context.Locate.ContentEvents().CreatingContent += ModelModule_CreatingContent;
+            context.Locate.ContentEvents().CheckedInContent += HandleCheckedInContent;
+            context.Locate.ContentEvents().CheckingInContent += HandleCheckingInContent;
 
-            context.Locate.ContentEvents().DeletedContent += ModelModule_DeletedContent;
-            context.Locate.ContentEvents().DeletingContent += ModelModule_DeletingContent;
+            context.Locate.ContentEvents().CheckedOutContent += HandleCheckedOutContent;
+            context.Locate.ContentEvents().CheckingOutContent += HandleCheckingOutContent;
 
-            context.Locate.ContentEvents().DeletedContentLanguage+=  ModelModule_DeletedContentLanguage;
-            context.Locate.ContentEvents().DeletingContentLanguage+=  ModelModule_DeletingContentLanguage;
-            
-            context.Locate.ContentEvents().DeletedContentVersion+=  ModelModule_DeletedContentVersion;
-            context.Locate.ContentEvents().DeletingContentVersion+=  ModelModule_DeletingContentVersion;
-            
-            context.Locate.ContentEvents().LoadingContent += ModelModule_LoadingContent;
-            context.Locate.ContentEvents().LoadedContent += ModelModule_LoadedContent;
-            
-            context.Locate.ContentEvents().LoadingDefaultContent += ModelModule_LoadingDefaultContent;
-            context.Locate.ContentEvents().LoadedDefaultContent += ModelModule_LoadedDefaultContent;
-            
-            context.Locate.ContentEvents().FailedLoadingContent += ModelModule_FailedLoadingContent;
+            context.Locate.ContentEvents().CreatedContentLanguage += HandleCreatedContentLanguage;
+            context.Locate.ContentEvents().CreatingContentLanguage += HandleCreatingContentLanguage;
 
-            context.Locate.ContentEvents().MovingContent += ModelModule_MovingContent;
-            context.Locate.ContentEvents().MovedContent += ModelModule_MovedContent;
-            
-            context.Locate.ContentEvents().PublishingContent += ModelModule_PublishingContent;
-            context.Locate.ContentEvents().PublishedContent += ModelModule_PublishedContent;
-            
-            context.Locate.ContentEvents().RejectedContent += ModelModule_RejectedContent;
-            context.Locate.ContentEvents().RejectingContent += ModelModule_RejectingContent;
-            
-            context.Locate.ContentEvents().RequestedApproval += ModelModule_RequestedApproval;
-            context.Locate.ContentEvents().RequestingApproval += ModelModule_RequestingApproval;
-            
-            context.Locate.ContentEvents().SavingContent += ModelModule_SavingContent;
-            context.Locate.ContentEvents().SavedContent += ModelModule_SavedContent;
-            
-            context.Locate.ContentEvents().ScheduledContent +=  ModelModule_ScheduledContent;
-            context.Locate.ContentEvents().SchedulingContent +=  ModelModule_SchedulingContent;
-            
+            context.Locate.ContentEvents().CreatedContent += HandleCreatedContent;
+            context.Locate.ContentEvents().CreatingContent += HandleCreatingContent;
+
+            context.Locate.ContentEvents().DeletedContent += HandleDeletedContent;
+            context.Locate.ContentEvents().DeletingContent += HandleDeletingContent;
+
+            context.Locate.ContentEvents().DeletedContentLanguage += HandleDeletedContentLanguage;
+            context.Locate.ContentEvents().DeletingContentLanguage += HandleDeletingContentLanguage;
+
+            context.Locate.ContentEvents().LoadedContent += HandleLoadedContent;
+
+            context.Locate.ContentEvents().LoadedDefaultContent += HandleLoadedDefaultContent;
+
+            context.Locate.ContentEvents().MovingContent += HandleMovingContent;
+            context.Locate.ContentEvents().MovedContent += HandleMovedContent;
+
+            context.Locate.ContentEvents().PublishingContent += HandlePublishingContent;
+            context.Locate.ContentEvents().PublishedContent += HandlePublishedContent;
+
+            context.Locate.ContentEvents().RejectedContent += HandleRejectedContent;
+            context.Locate.ContentEvents().RejectingContent += HandleRejectingContent;
+
+            context.Locate.ContentEvents().RequestedApproval += HandleRequestedApproval;
+            context.Locate.ContentEvents().RequestingApproval += HandleRequestingApproval;
+
+            context.Locate.ContentEvents().SavingContent += HandleSavingContent;
+            context.Locate.ContentEvents().SavedContent += HandleSavedContent;
+
+            context.Locate.ContentEvents().ScheduledContent += HandleScheduledContent;
+            context.Locate.ContentEvents().SchedulingContent += HandleSchedulingContent;
         }
 
-        private void ModelModule_SchedulingContent(object sender, ContentEventArgs e)
+
+        private void HandleCheckedInContent(object sender, ContentEventArgs eventArgs)
         {
-            foreach (var handler in this.contentEventHandlers)
+            HandleEvent(typeof(IContentCheckedInHandler<>), eventArgs);
+        }
+
+        private void HandleCheckingInContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentCheckingInHandler<>), eventArgs);
+        }
+
+        private void HandleCheckedOutContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentCheckedOutHandler<>), eventArgs);
+        }
+
+        private void HandleCheckingOutContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentCheckingOutHandler<>), eventArgs);
+        }
+
+        private void HandleCreatedContentLanguage(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentLanguageCreatedHandler<>), eventArgs);
+        }
+
+        private void HandleCreatingContentLanguage(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentLanguageCreatingHandler<>), eventArgs);
+        }
+
+        private void HandleCreatedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentCreatedHandler<>), eventArgs);
+        }
+
+        private void HandleCreatingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentCreatingHandler<>), eventArgs);
+        }
+
+        private void HandleDeletedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentPermanentlyDeletedHandler<>), eventArgs);
+        }
+
+        private void HandleDeletingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentPermanentlyDeletingHandler<>), eventArgs);
+        }
+
+        private void HandleDeletedContentLanguage(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentLanguageDeletedHandler<>), eventArgs);
+        }
+
+        private void HandleDeletingContentLanguage(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentLanguageDeletingHandler<>), eventArgs);
+        }
+
+        private void HandleLoadedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentLoadedHandler<>), eventArgs);
+        }
+
+        private void HandleLoadedDefaultContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IDefaultContentLoadedHandler<>), eventArgs);
+        }
+
+        private void HandlePublishingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentPublishingHandler<>), eventArgs);
+        }
+
+        private void HandlePublishedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentPublishedHandler<>), eventArgs);
+        }
+
+        private void HandleRejectedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentRejectedHandler<>), eventArgs);
+        }
+
+        private void HandleRejectingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentRejectingHandler<>), eventArgs);
+        }
+
+        private void HandleRequestedApproval(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IApprovalRequestedHandler<>), eventArgs);
+        }
+
+        private void HandleRequestingApproval(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IApprovalRequestingHandler<>), eventArgs);
+        }
+
+        private void HandleSavingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentSavingHandler<>), eventArgs);
+        }
+
+        private void HandleSavedContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentSavedHandler<>), eventArgs);
+        }
+
+        private void HandleScheduledContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentScheduledHandler<>), eventArgs);
+        }
+
+        private void HandleSchedulingContent(object sender, ContentEventArgs eventArgs)
+        {
+            HandleEvent(typeof(IContentSchedulingHandler<>), eventArgs);
+        }
+
+        private void HandleMovedContent(object sender, ContentEventArgs e)
+        {
+            var args = (e as MoveContentEventArgs);
+            if (e.TargetLink == ContentReference.WasteBasket)
             {
-                handler.OnContentSheduling(e.Content);
+                HandleEvent(typeof(IContentDeletedHandler<>), e);
+            }
+            else if (args.OriginalParent == ContentReference.WasteBasket)
+            {
+                HandleEvent(typeof(IContentRestoredHandler<>), e);
+            }
+            else
+            {
+                HandleEvent(typeof(IContentMovedHandler<>), e);
             }
         }
 
-        private void ModelModule_ScheduledContent(object sender, ContentEventArgs e)
+        private void HandleMovingContent(object sender, ContentEventArgs e)
         {
-            foreach (var handler in this.contentEventHandlers)
+            var args = (e as MoveContentEventArgs);
+            if (e.TargetLink == ContentReference.WasteBasket)
             {
-                handler.OnContentSheduled(e.Content);
+                HandleEvent(typeof(IContentDeletingHandler<>), e);
+            }
+            else if (args.OriginalParent == ContentReference.WasteBasket)
+            {
+                HandleEvent(typeof(IContentRestoringHandler<>), e);
+            }
+            else
+            {
+                HandleEvent(typeof(IContentMovingHandler<>), e);
             }
         }
 
-        private void ModelModule_RequestingApproval(object sender, ContentEventArgs e)
+
+        private void HandleEvent<TEventArgs>(Type handlerInterface, TEventArgs eventArgs)
+            where TEventArgs : ContentEventArgs
         {
-            foreach (var handler in this.contentEventHandlers)
+            var pageType = eventArgs.Content?.GetType() ?? typeof(IContent);
+            var eventHandlers = GetAllEventHandlers(pageType, handlerInterface);
+
+            foreach (var handler in eventHandlers)
             {
-                handler.OnContentApprovalRequesting(e.Content);
+                var handleMethod = handler.GetType()
+                    .GetMethod(nameof(IContentEventHandler<PageData, ContentEventArgs>.Handle));
+                handleMethod.Invoke(handler, new object[] {eventArgs.Content, eventArgs});
             }
         }
 
-        private void ModelModule_RequestedApproval(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentApprovalRequested(e.Content);
-            }
-        }
 
-        private void ModelModule_RejectingContent(object sender, ContentEventArgs e)
+        private IEnumerable<object> GetAllEventHandlers(Type pageType, Type eventGenericInterface)
         {
-            foreach (var handler in this.contentEventHandlers)
+            var handledContentTypes = pageType.GetInterfaces()
+                .Concat(GetInheritanceHierarchy(pageType))
+                .Where(type => typeof(IContent).IsAssignableFrom(type));
+            var handlers = Enumerable.Empty<object>();
+            foreach (var handledType in handledContentTypes)
             {
-                handler.OnContentRejecting(e.Content);
-            }
-        }
-
-        private void ModelModule_RejectedContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentRejected(e.Content);
-            }
-        }
-
-        private void ModelModule_FailedLoadingContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLoadFailed(e.Content);
-            }
-        }
-
-        private void ModelModule_LoadedDefaultContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnDefaultContentLoaded(e.Content);
-            }
-        }
-
-        private void ModelModule_LoadingDefaultContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnDefaultContentLoading(e.Content);
-            }
-        }
-
-        private void ModelModule_LoadedContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLoaded(e.Content);
-            }
-        }
-
-        private void ModelModule_LoadingContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLoading(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletingContentVersion(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentVersionDeleting(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletedContentVersion(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentVersionDeleted(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletingContentLanguage(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLanguageDeleting(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletedContentLanguage(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLanguageDeleted(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletingContent(object sender, DeleteContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentPermanentlyDeleting(e.Content);
-            }
-        }
-
-        private void ModelModule_CreatingContentLanguage(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLanguageCreating(e.Content);
-            }
-        }
-
-        private void ModelModule_CreatedContentLanguage(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentLanguageCreated(e.Content);
-            }
-        }
-
-        private void ModelModule_CheckingOutContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCheckingOut(e.Content);
-            }
-        }
-
-        private void ModelModule_CheckedOutContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCheckedOut(e.Content);
-            }
-        }
-
-        private void ModelModule_CheckingInContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCheckingIn(e.Content);
-            }
-        }
-
-        private void ModelModule_CheckedInContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCheckedIn(e.Content);
-            }
-        }
-
-        private void ModelModule_DeletedContent(object sender, DeleteContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentPermanentlyDeleted(e.Content);
-            }
-        }
-
-        private void ModelModule_MovedContent(object sender, ContentEventArgs e)
-        {
-            var args = e as MoveContentEventArgs;
-            foreach (var handler in this.contentEventHandlers)
-            {
-                if (e.TargetLink == ContentReference.WasteBasket)
+                var handlerInterface = eventGenericInterface.MakeGenericType(handledType);
+                var currentHandlers = this.serviceLocator
+                    .GetAllInstances(handlerInterface);
+                if (currentHandlers.Any())
                 {
-                    handler.OnContentDeleted(e.Content);
-                }
-                else if (args.OriginalParent == ContentReference.WasteBasket)
-                {
-                    handler.OnContentRestored(args.TargetLink, e.Content);
-                }
-                else
-                {
-                    handler.OnContentMoved(args.OriginalParent, e.Content);
+                    handlers = handlers.Concat(currentHandlers);
                 }
             }
+
+            return handlers;
         }
 
-        private void ModelModule_MovingContent(object sender, ContentEventArgs e)
+        private IEnumerable<Type> GetInheritanceHierarchy(Type pageType)
         {
-            var args = e as MoveContentEventArgs;
-            foreach (var handler in this.contentEventHandlers)
+            while (pageType != null)
             {
-                if (e.TargetLink == ContentReference.WasteBasket)
-                {
-                    handler.OnContentDeleting(e.Content);
-                }
-                else if (args.OriginalParent == ContentReference.WasteBasket)
-                {
-                    handler.OnContentRestoring(args.TargetLink, e.Content);
-                }
-                else
-                {
-                    handler.OnContentMoving(args.OriginalParent, args.TargetLink, e.Content);
-                }
-            }
-        }
-
-        private void ModelModule_PublishedContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentPublished(e.Content);
-            }
-        }
-
-
-        private void ModelModule_CreatedContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCreated(e.Content);
-            }
-        }
-
-        private void ModelModule_CreatingContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentCreating(e.Content);
-            }
-        }
-
-        private void ModelModule_SavedContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentSaved(e.Content);
-            }
-        }
-
-        private void ModelModule_SavingContent(object sender, ContentEventArgs e)
-        {
-            var saveEventArgs = e as SaveContentEventArgs;
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentSaving(e.Content, saveEventArgs.Action);
-            }
-        }
-
-        private void ModelModule_PublishingContent(object sender, ContentEventArgs e)
-        {
-            foreach (var handler in this.contentEventHandlers)
-            {
-                handler.OnContentPublishing(e.Content);
+                yield return pageType;
+                pageType = pageType.BaseType;
             }
         }
 
         public void Uninitialize(InitializationEngine context)
         {
-            context.Locate.ContentEvents().CheckedInContent -= ModelModule_CheckedInContent;
-            context.Locate.ContentEvents().CheckingInContent -= ModelModule_CheckingInContent;
+            context.Locate.ContentEvents().CheckedInContent -= HandleCheckedInContent;
+            context.Locate.ContentEvents().CheckingInContent -= HandleCheckingInContent;
 
-            context.Locate.ContentEvents().CheckedOutContent -= ModelModule_CheckedOutContent;
-            context.Locate.ContentEvents().CheckingOutContent -= ModelModule_CheckingOutContent;
+            context.Locate.ContentEvents().CheckedOutContent -= HandleCheckedOutContent;
+            context.Locate.ContentEvents().CheckingOutContent -= HandleCheckingOutContent;
 
-            context.Locate.ContentEvents().CreatedContentLanguage -= ModelModule_CreatedContentLanguage;
-            context.Locate.ContentEvents().CreatingContentLanguage -= ModelModule_CreatingContentLanguage;
+            context.Locate.ContentEvents().CreatedContentLanguage -= HandleCreatedContentLanguage;
+            context.Locate.ContentEvents().CreatingContentLanguage -= HandleCreatingContentLanguage;
 
-            context.Locate.ContentEvents().CreatedContent -= ModelModule_CreatedContent;
-            context.Locate.ContentEvents().CreatingContent -= ModelModule_CreatingContent;
+            context.Locate.ContentEvents().CreatedContent -= HandleCreatedContent;
+            context.Locate.ContentEvents().CreatingContent -= HandleCreatingContent;
 
-            context.Locate.ContentEvents().DeletedContent -= ModelModule_DeletedContent;
-            context.Locate.ContentEvents().DeletingContent -= ModelModule_DeletingContent;
+            context.Locate.ContentEvents().DeletedContent -= HandleDeletedContent;
+            context.Locate.ContentEvents().DeletingContent -= HandleDeletingContent;
 
-            context.Locate.ContentEvents().DeletedContentLanguage -= ModelModule_DeletedContentLanguage;
-            context.Locate.ContentEvents().DeletingContentLanguage -= ModelModule_DeletingContentLanguage;
+            context.Locate.ContentEvents().DeletedContentLanguage -= HandleDeletedContentLanguage;
+            context.Locate.ContentEvents().DeletingContentLanguage -= HandleDeletingContentLanguage;
 
-            context.Locate.ContentEvents().DeletedContentVersion -= ModelModule_DeletedContentVersion;
-            context.Locate.ContentEvents().DeletingContentVersion -= ModelModule_DeletingContentVersion;
+            context.Locate.ContentEvents().LoadedContent -= HandleLoadedContent;
 
-            context.Locate.ContentEvents().LoadingContent -= ModelModule_LoadingContent;
-            context.Locate.ContentEvents().LoadedContent -= ModelModule_LoadedContent;
+            context.Locate.ContentEvents().LoadedDefaultContent -= HandleLoadedDefaultContent;
 
-            context.Locate.ContentEvents().LoadingDefaultContent -= ModelModule_LoadingDefaultContent;
-            context.Locate.ContentEvents().LoadedDefaultContent -= ModelModule_LoadedDefaultContent;
+            context.Locate.ContentEvents().MovingContent -= HandleMovingContent;
+            context.Locate.ContentEvents().MovedContent -= HandleMovedContent;
 
-            context.Locate.ContentEvents().FailedLoadingContent -= ModelModule_FailedLoadingContent;
+            context.Locate.ContentEvents().PublishingContent -= HandlePublishingContent;
+            context.Locate.ContentEvents().PublishedContent -= HandlePublishedContent;
 
-            context.Locate.ContentEvents().MovingContent -= ModelModule_MovingContent;
-            context.Locate.ContentEvents().MovedContent -= ModelModule_MovedContent;
+            context.Locate.ContentEvents().RejectedContent -= HandleRejectedContent;
+            context.Locate.ContentEvents().RejectingContent -= HandleRejectingContent;
 
-            context.Locate.ContentEvents().PublishingContent -= ModelModule_PublishingContent;
-            context.Locate.ContentEvents().PublishedContent -= ModelModule_PublishedContent;
+            context.Locate.ContentEvents().RequestedApproval -= HandleRequestedApproval;
+            context.Locate.ContentEvents().RequestingApproval -= HandleRequestingApproval;
 
-            context.Locate.ContentEvents().RejectedContent -= ModelModule_RejectedContent;
-            context.Locate.ContentEvents().RejectingContent -= ModelModule_RejectingContent;
+            context.Locate.ContentEvents().SavingContent -= HandleSavingContent;
+            context.Locate.ContentEvents().SavedContent -= HandleSavedContent;
 
-            context.Locate.ContentEvents().RequestedApproval -= ModelModule_RequestedApproval;
-            context.Locate.ContentEvents().RequestingApproval -= ModelModule_RequestingApproval;
-
-            context.Locate.ContentEvents().SavingContent -= ModelModule_SavingContent;
-            context.Locate.ContentEvents().SavedContent -= ModelModule_SavedContent;
-
-            context.Locate.ContentEvents().ScheduledContent -= ModelModule_ScheduledContent;
-            context.Locate.ContentEvents().SchedulingContent -= ModelModule_SchedulingContent;
+            context.Locate.ContentEvents().ScheduledContent -= HandleScheduledContent;
+            context.Locate.ContentEvents().SchedulingContent -= HandleSchedulingContent;
         }
 
         public void ConfigureContainer(ServiceConfigurationContext context)
@@ -402,11 +319,32 @@ namespace ForteDigital.EpiEasyEvents
             {
                 foreach (var assembly in this.eventHandlersAssemblies)
                 {
-                    a.Assembly(assembly);                    
+                    a.Assembly(assembly);
                 }
-                
-                a.AddAllTypesOf<IContentEventHandler>();
+                a.Convention<AllEventHandlersConvention>();
+
             }));
+        }
+
+        private class AllEventHandlersConvention : IRegistrationConvention
+        {
+            public void ScanTypes(TypeSet types, Registry registry)
+            {
+                // Only work on concrete types
+                var typesToRegister = types.FindTypes(TypeClassification.Concretes | TypeClassification.Closed)
+                    .Where(type => type.GetInterfaces().Any(x=>x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>)));
+                foreach (var typeToRegister in typesToRegister)
+                {
+                    
+                    // Register against all the interfaces implemented
+                    // by this concrete class
+                    var interfacesToRegister = typeToRegister.GetInterfaces();
+                    foreach (var interfaceToRegister in interfacesToRegister)
+                    {
+                        registry.For(interfaceToRegister).Use(typeToRegister);
+                    }
+                }
+            }
         }
     }
 }
