@@ -6,7 +6,7 @@ namespace ForteDigital.EpiEasyEvents
     public interface IContentEventHandler
     {
         void OnContentMoved(ContentReference originalParent, IContent content);
-        void OnContentMoving(ContentReference originalParent, IContent content);
+        void OnContentMoving(ContentReference originalParent, ContentReference targetParent, IContent content);
         void OnContentPublishing(IContent content);
         void OnContentPublished(IContent content);
         void OnContentCreated(IContent content);

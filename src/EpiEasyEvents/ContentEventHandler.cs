@@ -11,9 +11,9 @@ namespace ForteDigital.EpiEasyEvents
             if (content is T page) this.OnContentMoved(page, originalParent);
         }
 
-        public void OnContentMoving(ContentReference originalParent, IContent content)
+        public void OnContentMoving(ContentReference originalParent, ContentReference targetParent, IContent content)
         {
-            if (content is T page) this.OnContentMoving(page, originalParent);
+            if (content is T page) this.OnContentMoving(page, originalParent, targetParent);
         }
 
         public void OnContentPublishing(IContent content)
@@ -249,7 +249,8 @@ namespace ForteDigital.EpiEasyEvents
         
         protected virtual void OnContentDeleted(T content) {}
         
-        protected virtual void OnContentMoving(T content, ContentReference originalParent) {}
+        protected virtual void OnContentMoving(T content, ContentReference originalParent,
+            ContentReference targetParent) {}
         
 
     }

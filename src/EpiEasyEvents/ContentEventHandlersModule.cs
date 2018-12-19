@@ -291,7 +291,7 @@ namespace ForteDigital.EpiEasyEvents
                 }
                 else
                 {
-                    handler.OnContentMoving(args.OriginalParent, e.Content);
+                    handler.OnContentMoving(args.OriginalParent, args.TargetLink, e.Content);
                 }
             }
         }
