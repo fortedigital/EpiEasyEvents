@@ -20,14 +20,27 @@ First, add new initializable module that will register all event handlers in Epi
     }
 ```
 
-Then create class that derives from `ContentEventHandler<T>`, where `T` is content type for which events you respond, overriding all methods for which you want to subscribe:
+Then create class that implements any of the generic event handler interfaces in `Forte.EpiEasyEvents.EventHandlers` namespace. Each interface has generic argument being the content type for event.
+
+Each interface derives from `IContentEventHandler<TContentType, TEventArgsType>` and has single method to implement: 
+```cs
+    void Handle(TContentType content, TEventArgsType eventArgs);
+```
+
+
+Example:
 
 ```cs
-    public class StandardPageEvents : ContentEventHandler<StandardPage>
+    // handler that will be fired when StandardPage was published
+   public class ContentPublishedHandler : IPublishedContentHandler<StandardPage> 
     {
-        protected override void OnContentPublishing(StandardPage content)
+        public ContentPublishedHandler()
         {
-            // any logic here
+        }
+        
+        public void Handle(NewsArticlePage content, SaveContentEventArgs eventArgs)
+        {
+            // ...
         }
     }
 ```
