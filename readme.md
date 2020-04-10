@@ -44,3 +44,21 @@ Example:
         }
     }
 ```
+
+# Settings
+
+In some cases, you may need to disable events handling. To disable events handling dynamically create new instance of DisabledEventsHandlerScope **(and remember to call Dispose() on it or wrap with using block)** from Forte.EpiEasyEvents namespace or set property IsHandlingDisabled from Forte.EpiEasyEvents.Configuration namespace to true.
+
+
+```cs
+using(new Forte.EpiEasyEvents.DisabledEventsHandlerScope()) {
+    //...code here without events handling
+}
+```
+
+or
+
+```cs
+   Forte.EpiEasyEvents.Configuration.IsHandlingDisabled = true;
+```
+Property default value is false.
