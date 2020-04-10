@@ -44,3 +44,12 @@ Example:
         }
     }
 ```
+
+# Settings
+
+In some cases, you may need to disable events handling. To disable event handling dynamically set property IsHandlingDisabled from Forte.EpiEasyEvents.Configuration namespace to true.
+Property default value is false.
+
+```cs
+   Forte.EpiEasyEvents.Configuration.IsHandlingDisabled = true;
+```

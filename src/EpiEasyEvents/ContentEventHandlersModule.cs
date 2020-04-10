@@ -229,6 +229,11 @@ namespace Forte.EpiEasyEvents
         private void HandleEvent<TEventArgs>(Type handlerInterface, TEventArgs eventArgs)
             where TEventArgs : ContentEventArgs
         {
+            if (Configuration.IsHandlingDisabled)
+            {
+                return;
+            }
+
             var pageType = eventArgs.Content?.GetType() ?? typeof(IContent);
             var eventHandlers = GetAllEventHandlers(pageType, handlerInterface);
 
@@ -321,8 +326,8 @@ namespace Forte.EpiEasyEvents
                 {
                     a.Assembly(assembly);
                 }
-                a.Convention<AllEventHandlersConvention>();
 
+                a.Convention<AllEventHandlersConvention>();
             }));
         }
 
@@ -332,10 +337,9 @@ namespace Forte.EpiEasyEvents
             {
                 // Only work on concrete types
                 var typesToRegister = types.FindTypes(TypeClassification.Concretes | TypeClassification.Closed)
-                    .Where(type => type.GetInterfaces().Any(x=>x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>)));
+                    .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>)));
                 foreach (var typeToRegister in typesToRegister)
                 {
-                    
                     // Register against all the interfaces implemented
                     // by this concrete class
                     var interfacesToRegister = typeToRegister.GetInterfaces();
