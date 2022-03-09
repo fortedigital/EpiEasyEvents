@@ -1,7 +1,0 @@
-<configuration>
-    <episerver.shell xdt:Transform="InsertIfMissing">
-        <protectedModules xdt:Transform="InsertIfMissing">
-            <add name="EpiEasyEvents" xdt:Transform="InsertIfMissing"/>
-        </protectedModules>
-    </episerver.shell>
-</configuration>
