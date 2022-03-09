@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddEpiEasyEvents(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
-            services.AddSingleton<EasyEventsRegistry>();
+            services.AddSingleton<EventsRegistry>();
             RegisterEventHandlers(services, assemblies);
 
             return services;
@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static void UseEpiEasyEvents(this IApplicationBuilder app)
         {
-            var easyEventsRegistry = app.ApplicationServices.GetRequiredService<EasyEventsRegistry>();
+            var easyEventsRegistry = app.ApplicationServices.GetRequiredService<EventsRegistry>();
             easyEventsRegistry.RegisterEvents();
         }
 

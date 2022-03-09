@@ -1,24 +1,33 @@
 ﻿# EpiEasyEvents
 
-Simple helper to make implementing handlers for EpiServer events easier
+Simple helper to make implementing handlers for EpiServer events easier. Version 2 is targetting EpiServer 12 (.Net Core based)
 
 # Installation
-`Install-Package Forte.EpiEasyEvents`
+`dotnet add package Forte.EpiEasyEvents`
 
 # How to use
 
-First, add new initializable module that will register all event handlers in EpiServer:
+First, add two calls in your Startup
 ```cs
-    [InitializableModule]
-    [ModuleDependency(typeof(EPiServer.Web.InitializationModule))]
-    public class EventHandlersRegistrar : ContentEventHandlersModule
-    {
-        // provide all assemblies that contains event handlers
-        public EventHandlersRegistrar():base(typeof(EventHandlersRegistrar).Assembly)
-        {
-        }
-    }
+public void ConfigureServices(IServiceCollection services)
+{
+    // (...)
+    services.AddEpiEasyEvents(this.GetType().Assembly); 
+    // (...)
+}
 ```
+(You need to pass an assembly (or list of assemblies) that you want to be scanned for implementations of `IContentEventHandler`)
+
+and
+```cs
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    // (...)
+    app.UseEpiEasyEvents();
+    // (...)
+}
+```
+
 
 Then create class that implements any of the generic event handler interfaces in `Forte.EpiEasyEvents.EventHandlers` namespace. Each interface has generic argument being the content type for event.
 

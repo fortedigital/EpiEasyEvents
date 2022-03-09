@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Forte.EpiEasyEvents
 {
-    public class EasyEventsRegistry
+    internal class EventsRegistry
     {
         private readonly IContentEvents _contentEvents;
         private readonly IServiceProvider _services;
 
-        public EasyEventsRegistry(IContentEvents contentEvents, IServiceProvider services)
+        public EventsRegistry(IContentEvents contentEvents, IServiceProvider services)
         {
             _contentEvents = contentEvents;
             _services = services;
