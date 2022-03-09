@@ -65,9 +65,3 @@ using(new Forte.EpiEasyEvents.DisabledEventsHandlerScope()) {
 }
 ```
 
-or
-
-```cs
-   Forte.EpiEasyEvents.Configuration.IsHandlingDisabled = true;
-```
-Property default value is false.
