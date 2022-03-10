@@ -46,12 +46,9 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var interfaceTypes = givenType.GetInterfaces();
 
-            foreach (var it in interfaceTypes)
+            if (interfaceTypes.Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == genericType))
             {
-                if (it.IsGenericType && it.GetGenericTypeDefinition() == genericType)
-                {
-                    return true;
-                }
+                return true;
             }
 
             if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
