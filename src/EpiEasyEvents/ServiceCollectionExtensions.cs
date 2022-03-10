@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Forte.EpiEasyEvents;
@@ -32,13 +33,34 @@ namespace Microsoft.Extensions.DependencyInjection
             var interfaceWithTypeTuples = assemblies.SelectMany(assembly => assembly.GetTypes())
                 .SelectMany(
                     type => type.GetInterfaces()
-                        .Where(interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>))
+                        .Where(interfaceType => IsAssignableToGenericType(interfaceType, typeof(IContentEventHandler<,>)) && interfaceType.GetGenericTypeDefinition() != typeof(IContentEventHandler<,>))
                         .Select(it => (it, type)));
 
             foreach (var (interfaceToRegister, typeToRegister) in interfaceWithTypeTuples)
             {
                 services.AddTransient(interfaceToRegister, typeToRegister);
             }
+        }
+
+        private static bool IsAssignableToGenericType(Type givenType, Type genericType)
+        {
+            var interfaceTypes = givenType.GetInterfaces();
+
+            foreach (var it in interfaceTypes)
+            {
+                if (it.IsGenericType && it.GetGenericTypeDefinition() == genericType)
+                {
+                    return true;
+                }
+            }
+
+            if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
+            {
+                return true;
+            }
+
+            var baseType = givenType.BaseType;
+            return baseType != null && IsAssignableToGenericType(baseType, genericType);
         }
     }
 }
