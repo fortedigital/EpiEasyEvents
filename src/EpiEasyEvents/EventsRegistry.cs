@@ -219,7 +219,7 @@ namespace Forte.EpiEasyEvents
         private void HandleEvent<TEventArgs>(Type handlerInterface, TEventArgs eventArgs)
             where TEventArgs : ContentEventArgs
         {
-            if (DisabledEventsHandlerScopeConfiguration.IsHandlingDisabled)
+            if (EventsHandlerScopeConfiguration.IsHandlingDisabled)
             {
                 return;
             }

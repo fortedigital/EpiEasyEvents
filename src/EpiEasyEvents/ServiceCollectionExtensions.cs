@@ -29,18 +29,15 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static void RegisterEventHandlers(IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
-            var typesToRegister = assemblies.SelectMany(a => a.GetTypes())
-                .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>)));
+            var interfaceWithTypeTuples = assemblies.SelectMany(assembly => assembly.GetTypes())
+                .SelectMany(
+                    type => type.GetInterfaces()
+                        .Where(interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>))
+                        .Select(it => (it, type)));
 
-            foreach (var typeToRegister in typesToRegister)
+            foreach (var (interfaceToRegister, typeToRegister) in interfaceWithTypeTuples)
             {
-                // Register against all the interfaces implemented
-                // by this concrete class
-                var interfacesToRegister = typeToRegister.GetInterfaces();
-                foreach (var interfaceToRegister in interfacesToRegister)
-                {
-                    services.AddTransient(interfaceToRegister, typeToRegister);
-                }
+                services.AddTransient(interfaceToRegister, typeToRegister);
             }
         }
     }

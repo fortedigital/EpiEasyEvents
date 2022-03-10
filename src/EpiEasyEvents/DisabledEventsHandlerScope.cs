@@ -8,13 +8,13 @@ namespace Forte.EpiEasyEvents
 
         public DisabledEventsHandlerScope()
         {
-            _previousValue = DisabledEventsHandlerScopeConfiguration.IsHandlingDisabled;
-            DisabledEventsHandlerScopeConfiguration.IsHandlingDisabled = true;
+            _previousValue = EventsHandlerScopeConfiguration.IsHandlingDisabled;
+            EventsHandlerScopeConfiguration.IsHandlingDisabled = true;
         }
 
         public void Dispose()
         {
-            DisabledEventsHandlerScopeConfiguration.IsHandlingDisabled = _previousValue;
+            EventsHandlerScopeConfiguration.IsHandlingDisabled = _previousValue;
         }
     }
 }

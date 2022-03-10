@@ -1,6 +1,6 @@
 ﻿namespace Forte.EpiEasyEvents
 {
-    internal static class DisabledEventsHandlerScopeConfiguration
+    internal static class EventsHandlerScopeConfiguration
     {
         public static bool IsHandlingDisabled { get; set; } = false;
     }
