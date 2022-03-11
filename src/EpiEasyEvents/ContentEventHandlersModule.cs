@@ -11,7 +11,6 @@ using Forte.EpiEasyEvents.EventHandlers;
 using StructureMap;
 using StructureMap.Graph;
 using StructureMap.Graph.Scanning;
-using StructureMap.TypeRules;
 
 namespace Forte.EpiEasyEvents
 {
@@ -335,19 +334,36 @@ namespace Forte.EpiEasyEvents
         {
             public void ScanTypes(TypeSet types, Registry registry)
             {
-                // Only work on concrete types
-                var typesToRegister = types.FindTypes(TypeClassification.Concretes | TypeClassification.Closed)
-                    .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IContentEventHandler<,>)));
-                foreach (var typeToRegister in typesToRegister)
+                var interfaceWithTypeTuples = types
+                    .FindTypes(TypeClassification.Concretes | TypeClassification.Closed)
+                    .SelectMany(
+                        type => type.GetInterfaces()
+                            .Where(interfaceType => IsAssignableToGenericType(interfaceType, typeof(IContentEventHandler<,>)) && interfaceType.GetGenericTypeDefinition() != typeof(IContentEventHandler<,>))
+                            .Select(it => new { InterfaceType = it, TypeToRegister = type}));
+
+
+                foreach (var typePair in interfaceWithTypeTuples)
                 {
-                    // Register against all the interfaces implemented
-                    // by this concrete class
-                    var interfacesToRegister = typeToRegister.GetInterfaces();
-                    foreach (var interfaceToRegister in interfacesToRegister)
-                    {
-                        registry.For(interfaceToRegister).Use(typeToRegister);
-                    }
+                    registry.For(typePair.InterfaceType).Use(typePair.TypeToRegister);
                 }
+            }
+
+            private static bool IsAssignableToGenericType(Type givenType, Type genericType)
+            {
+                var interfaceTypes = givenType.GetInterfaces();
+
+                if (interfaceTypes.Any(it => it.IsGenericType && it.GetGenericTypeDefinition() == genericType))
+                {
+                    return true;
+                }
+
+                if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
+                {
+                    return true;
+                }
+
+                var baseType = givenType.BaseType;
+                return baseType != null && IsAssignableToGenericType(baseType, genericType);
             }
         }
     }
