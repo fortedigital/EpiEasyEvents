@@ -31,6 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
         private static void RegisterEventHandlers(IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
             var interfaceWithTypeTuples = assemblies.SelectMany(assembly => assembly.GetTypes())
+                .Where(t => t.IsAbstract == false)
                 .SelectMany(
                     type => type.GetInterfaces()
                         .Where(interfaceType => IsAssignableToGenericType(interfaceType, typeof(IContentEventHandler<,>)) && interfaceType.GetGenericTypeDefinition() != typeof(IContentEventHandler<,>))
