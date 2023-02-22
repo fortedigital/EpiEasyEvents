@@ -224,7 +224,7 @@ namespace Forte.EpiEasyEvents
                 return;
             }
 
-            var pageType = eventArgs.Content?.GetType() ?? typeof(IContent);
+            var pageType = eventArgs.Content?.GetType() ?? typeof(IContentData);
             var eventHandlers = GetAllEventHandlers(pageType, handlerInterface);
 
             foreach (var handler in eventHandlers)
@@ -239,7 +239,7 @@ namespace Forte.EpiEasyEvents
         {
             var handledContentTypes = pageType.GetInterfaces()
                 .Concat(GetInheritanceHierarchy(pageType))
-                .Where(type => typeof(IContent).IsAssignableFrom(type));
+                .Where(type => typeof(IContentData).IsAssignableFrom(type));
             var handlers = Enumerable.Empty<object>();
             foreach (var handledType in handledContentTypes)
             {

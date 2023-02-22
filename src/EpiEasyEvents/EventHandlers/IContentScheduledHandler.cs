@@ -3,5 +3,5 @@ using EPiServer.Core;
 
 namespace Forte.EpiEasyEvents.EventHandlers
 {
-    public interface IContentScheduledHandler<TContentType>: IContentEventHandler<TContentType, SaveContentEventArgs> where TContentType:IContent{}
+    public interface IContentScheduledHandler<TContentType>: IContentEventHandler<TContentType, SaveContentEventArgs> where TContentType:IContentData{}
 }
