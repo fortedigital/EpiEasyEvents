@@ -230,7 +230,7 @@ namespace Forte.EpiEasyEvents
             foreach (var handler in eventHandlers)
             {
                 var handleMethod = handler.GetType()
-                    .GetMethod(nameof(IContentEventHandler<PageData, ContentEventArgs>.Handle));
+                    .GetMethod(nameof(IContentEventHandler<PageData, ContentEventArgs>.Handle), new []{pageType, eventArgs.GetType()});
                 handleMethod?.Invoke(handler, new object[] {eventArgs.Content, eventArgs});
             }
         }
