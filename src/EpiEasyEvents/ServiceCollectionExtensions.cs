@@ -34,13 +34,22 @@ namespace Microsoft.Extensions.DependencyInjection
                 .Where(t => t.IsAbstract == false)
                 .SelectMany(
                     type => type.GetInterfaces()
-                        .Where(interfaceType => IsAssignableToGenericType(interfaceType, typeof(IContentEventHandler<,>)) && interfaceType.GetGenericTypeDefinition() != typeof(IContentEventHandler<,>))
+                        .Where(
+                            interfaceType => IsAssignableToGenericType(interfaceType, typeof(IContentChangedHandler<,>)) &&
+                                             IsNotMarkerInterface(interfaceType.GetGenericTypeDefinition()))
                         .Select(it => (it, type)));
 
             foreach (var (interfaceToRegister, typeToRegister) in interfaceWithTypeTuples)
             {
                 services.AddTransient(interfaceToRegister, typeToRegister);
             }
+        }
+
+        private static bool IsNotMarkerInterface(Type interfaceGenericTypeDefinition)
+        {
+            return interfaceGenericTypeDefinition != typeof(IContentEventHandler<,>) &&
+                   interfaceGenericTypeDefinition != typeof(IContentChangedHandler<,>) &&
+                   interfaceGenericTypeDefinition != typeof(IContentSecurityEventHandler<,>);
         }
 
         private static bool IsAssignableToGenericType(Type givenType, Type genericType)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EPiServer;
 using EPiServer.Core;
+using EPiServer.DataAbstraction;
 using Forte.EpiEasyEvents.EventHandlers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,56 +11,73 @@ namespace Forte.EpiEasyEvents
 {
     internal class EventsRegistry
     {
-        private readonly IContentEvents _contentEvents;
         private readonly IServiceProvider _services;
+        private readonly IContentLoader _contentLoader;
+        private readonly IContentEvents _contentEvents;
+        private readonly IContentSecurityEvents _contentSecurityEvents;
 
-        public EventsRegistry(IContentEvents contentEvents, IServiceProvider services)
+        public EventsRegistry(IServiceProvider services, IContentLoader contentLoader, IContentEvents contentEvents, IContentSecurityEvents contentSecurityEvents)
         {
-            _contentEvents = contentEvents;
             _services = services;
+            _contentLoader = contentLoader;
+            _contentEvents = contentEvents;
+            _contentSecurityEvents = contentSecurityEvents;
         }
 
         public void RegisterEvents()
         {
-             _contentEvents.CheckedInContent += HandleCheckedInContent;
-             _contentEvents.CheckingInContent += HandleCheckingInContent;
+            _contentEvents.CheckedInContent += HandleCheckedInContent;
+            _contentEvents.CheckingInContent += HandleCheckingInContent;
 
-             _contentEvents.CheckedOutContent += HandleCheckedOutContent;
-             _contentEvents.CheckingOutContent += HandleCheckingOutContent;
+            _contentEvents.CheckedOutContent += HandleCheckedOutContent;
+            _contentEvents.CheckingOutContent += HandleCheckingOutContent;
 
-             _contentEvents.CreatedContentLanguage += HandleCreatedContentLanguage;
-             _contentEvents.CreatingContentLanguage += HandleCreatingContentLanguage;
+            _contentEvents.CreatedContentLanguage += HandleCreatedContentLanguage;
+            _contentEvents.CreatingContentLanguage += HandleCreatingContentLanguage;
 
-             _contentEvents.CreatedContent += HandleCreatedContent;
-             _contentEvents.CreatingContent += HandleCreatingContent;
+            _contentEvents.CreatedContent += HandleCreatedContent;
+            _contentEvents.CreatingContent += HandleCreatingContent;
 
-             _contentEvents.DeletedContent += HandleDeletedContent;
-             _contentEvents.DeletingContent += HandleDeletingContent;
+            _contentEvents.DeletedContent += HandleDeletedContent;
+            _contentEvents.DeletingContent += HandleDeletingContent;
 
-             _contentEvents.DeletedContentLanguage += HandleDeletedContentLanguage;
-             _contentEvents.DeletingContentLanguage += HandleDeletingContentLanguage;
+            _contentEvents.DeletedContentLanguage += HandleDeletedContentLanguage;
+            _contentEvents.DeletingContentLanguage += HandleDeletingContentLanguage;
 
-             _contentEvents.LoadedContent += HandleLoadedContent;
+            _contentEvents.LoadedContent += HandleLoadedContent;
 
-             _contentEvents.LoadedDefaultContent += HandleLoadedDefaultContent;
+            _contentEvents.LoadedDefaultContent += HandleLoadedDefaultContent;
 
-             _contentEvents.MovingContent += HandleMovingContent;
-             _contentEvents.MovedContent += HandleMovedContent;
+            _contentEvents.MovingContent += HandleMovingContent;
+            _contentEvents.MovedContent += HandleMovedContent;
 
-             _contentEvents.PublishingContent += HandlePublishingContent;
-             _contentEvents.PublishedContent += HandlePublishedContent;
+            _contentEvents.PublishingContent += HandlePublishingContent;
+            _contentEvents.PublishedContent += HandlePublishedContent;
 
-             _contentEvents.RejectedContent += HandleRejectedContent;
-             _contentEvents.RejectingContent += HandleRejectingContent;
+            _contentEvents.RejectedContent += HandleRejectedContent;
+            _contentEvents.RejectingContent += HandleRejectingContent;
 
-             _contentEvents.RequestedApproval += HandleRequestedApproval;
-             _contentEvents.RequestingApproval += HandleRequestingApproval;
+            _contentEvents.RequestedApproval += HandleRequestedApproval;
+            _contentEvents.RequestingApproval += HandleRequestingApproval;
 
-             _contentEvents.SavingContent += HandleSavingContent;
-             _contentEvents.SavedContent += HandleSavedContent;
+            _contentEvents.SavingContent += HandleSavingContent;
+            _contentEvents.SavedContent += HandleSavedContent;
 
-             _contentEvents.ScheduledContent += HandleScheduledContent;
-             _contentEvents.SchedulingContent += HandleSchedulingContent;
+            _contentEvents.ScheduledContent += HandleScheduledContent;
+            _contentEvents.SchedulingContent += HandleSchedulingContent;
+
+            _contentSecurityEvents.ContentSecuritySaving += HandleContentSecuritySaving;
+            _contentSecurityEvents.ContentSecuritySaved += HandleContentSecuritySaved;
+        }
+
+        private void HandleContentSecuritySaved(object sender, ContentSecurityEventArg eventArgs)
+        {
+            HandleSecurityEvent(typeof(IContentSecuritySavedHandler<>), eventArgs);
+        }
+
+        private void HandleContentSecuritySaving(object sender, ContentSecurityCancellableEventArgs eventArgs)
+        {
+            HandleSecurityEvent(typeof(IContentSecuritySavingHandler<>), eventArgs);
         }
 
         private void HandleCheckedInContent(object sender, ContentEventArgs eventArgs)
@@ -185,6 +203,7 @@ namespace Forte.EpiEasyEvents
         private void HandleMovedContent(object sender, ContentEventArgs e)
         {
             var args = e as MoveContentEventArgs;
+
             if (e.TargetLink == ContentReference.WasteBasket)
             {
                 HandleEvent(typeof(IContentDeletedHandler<>), e);
@@ -202,6 +221,7 @@ namespace Forte.EpiEasyEvents
         private void HandleMovingContent(object sender, ContentEventArgs e)
         {
             var args = e as MoveContentEventArgs;
+
             if (e.TargetLink == ContentReference.WasteBasket)
             {
                 HandleEvent(typeof(IContentDeletingHandler<>), e);
@@ -219,19 +239,48 @@ namespace Forte.EpiEasyEvents
         private void HandleEvent<TEventArgs>(Type handlerInterface, TEventArgs eventArgs)
             where TEventArgs : ContentEventArgs
         {
+            HandleEventInternal(handlerInterface, LoadContentFromContentEventArgs, eventArgs);
+
+            IContentData LoadContentFromContentEventArgs()
+            {
+                return eventArgs.Content ?? (_contentLoader.TryGet<IContent>(eventArgs.ContentLink, out var content) ? content : null);
+            }
+        }
+
+        private void HandleSecurityEvent<TEventArgs>(Type handlerInterface, TEventArgs eventArgs)
+            where TEventArgs : ContentSecurityEventArg
+        {
+            HandleEventInternal(handlerInterface, LoadContentFromSecurityEventArgs, eventArgs);
+
+            IContentData LoadContentFromSecurityEventArgs()
+            {
+                return _contentLoader.TryGet<IContent>(eventArgs.ContentLink, out var content) ? content : null;
+            }
+        }
+
+
+        private void HandleEventInternal<TEventArgs>(Type handlerInterface, Func<IContentData> contentLoadFunc, TEventArgs eventArgs)
+            where TEventArgs : EventArgs
+        {
             if (EventsHandlerScopeConfiguration.IsHandlingDisabled)
             {
                 return;
             }
 
-            var pageType = eventArgs.Content?.GetType() ?? typeof(IContentData);
-            var eventHandlers = GetAllEventHandlers(pageType, handlerInterface);
+            var content = contentLoadFunc();
+            var contentType = content?.GetType() ?? typeof(IContentData);
+            var eventHandlers = GetAllEventHandlers(contentType, handlerInterface);
+
+            var parameterTypes = new[] {contentType, eventArgs.GetType()};
+            var parameters = new object[] {content, eventArgs};
 
             foreach (var handler in eventHandlers)
             {
-                var handleMethod = handler.GetType()
-                    .GetMethod(nameof(IContentEventHandler<PageData, ContentEventArgs>.Handle), new []{pageType, eventArgs.GetType()});
-                handleMethod?.Invoke(handler, new object[] {eventArgs.Content, eventArgs});
+                var handleMethod = handler
+                    .GetType()
+                    .GetMethod(nameof(IContentChangedHandler<PageData, ContentEventArgs>.Handle), parameterTypes);
+
+                handleMethod?.Invoke(handler, parameters);
             }
         }
 
@@ -240,11 +289,14 @@ namespace Forte.EpiEasyEvents
             var handledContentTypes = pageType.GetInterfaces()
                 .Concat(GetInheritanceHierarchy(pageType))
                 .Where(type => typeof(IContentData).IsAssignableFrom(type));
+
             var handlers = Enumerable.Empty<object>();
+
             foreach (var handledType in handledContentTypes)
             {
                 var handlerInterface = eventGenericInterface.MakeGenericType(handledType);
                 var currentHandlers = _services.GetServices(handlerInterface).ToList();
+
                 if (currentHandlers.Any())
                 {
                     handlers = handlers.Concat(currentHandlers);

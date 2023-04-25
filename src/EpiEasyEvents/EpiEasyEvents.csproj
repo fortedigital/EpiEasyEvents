@@ -24,6 +24,9 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="EpiEasyEvents.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="EPiServer.CMS" Version="[12.0.2,13.0)" />
     <PackageReference Include="EPiServer.Framework" Version="[12.0.3,13.0)" />
   </ItemGroup>
