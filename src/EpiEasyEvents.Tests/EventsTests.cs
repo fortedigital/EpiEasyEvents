@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace EpiEasyEvents.Tests;
 
 [TestFixture]
-public partial class EventsTests
+public class EventsTests
 {
     [Test]
     public void GivenNoHandlersAreSubscribed_WhenEventIsRaised_ThenNoExceptionIsThrown()
@@ -116,14 +116,6 @@ public partial class EventsTests
 
         var content = Substitute.For<PageData>();
 
-        contentLoader.TryGet(Arg.Is<ContentReference>(value => value.ID == 1), out Arg.Any<IContent>())
-            .Returns(
-                callInfo =>
-                {
-                    callInfo[1] = content;
-                    return true;
-                });
-
         var eventRegistry = new EventsRegistry(serviceProvider, contentLoader, contentEvents, contentSecurityEvents);
         eventRegistry.RegisterEvents();
 
@@ -131,7 +123,11 @@ public partial class EventsTests
         contentEvents.CreatedContent +=
             Raise.EventWith<ContentEventArgs>(new SaveContentEventArgs(new ContentReference(1), content, SaveAction.Default, new StatusTransition()));
 
-        contentEvents.MovedContent += Raise.EventWith<ContentEventArgs>(new MoveContentEventArgs(new ContentReference(1), ContentReference.WasteBasket));
+        contentEvents.MovedContent += Raise.EventWith<ContentEventArgs>(
+            new MoveContentEventArgs(new ContentReference(1), ContentReference.WasteBasket)
+            {
+                Content = content,
+            });
 
         // Assert
         Assert.That(handler.RaisedEvents, Has.Count.EqualTo(2));
@@ -146,6 +142,35 @@ public partial class EventsTests
                 Assert.That(((MoveContentEventArgs) handler.RaisedEvents[1].EventArgs).ContentLink.ID, Is.EqualTo(1));
                 Assert.That(handler.RaisedEvents[1].Content, Is.SameAs(content));
             });
+    }
+
+    [Test]
+    public void GivenEventDoesNotContainContent_WhenEventIsRaised_ThenHandlerWithBaseTypeIsCalled()
+    {
+        // Arrange
+        var serviceCollection = new ServiceCollection();
+        var handler = new ContentDataHandler();
+        serviceCollection.AddSingleton<IContentPublishedHandler<IContentData>>(handler);
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+
+        var contentLoader = Substitute.For<IContentLoader>();
+        var contentEvents = Substitute.For<IContentEvents>();
+        var contentSecurityEvents = Substitute.For<IContentSecurityEvents>();
+
+        var eventRegistry = new EventsRegistry(serviceProvider, contentLoader, contentEvents, contentSecurityEvents);
+        eventRegistry.RegisterEvents();
+
+        // Act
+        contentEvents.PublishedContent +=
+            Raise.EventWith<ContentEventArgs>(new SaveContentEventArgs(new ContentReference(1), Substitute.For<PageData>(), SaveAction.Default, new StatusTransition()));
+
+        // Assert
+        Assert.That(handler.RaisedEvents, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(handler.RaisedEvents[0].EventArgs, Is.TypeOf<SaveContentEventArgs>());
+            Assert.That(((SaveContentEventArgs) handler.RaisedEvents[0].EventArgs).ContentLink.ID, Is.EqualTo(1));
+        });
     }
 
     [Test]

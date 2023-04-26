@@ -243,7 +243,7 @@ namespace Forte.EpiEasyEvents
 
             IContentData LoadContentFromContentEventArgs()
             {
-                return eventArgs.Content ?? (_contentLoader.TryGet<IContent>(eventArgs.ContentLink, out var content) ? content : null);
+                return eventArgs.Content;
             }
         }
 

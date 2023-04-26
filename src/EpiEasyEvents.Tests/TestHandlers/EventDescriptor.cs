@@ -3,4 +3,4 @@ using EPiServer.Core;
 
 namespace EpiEasyEvents.Tests.TestHandlers;
 
-public record EventDescriptor(IContent Content, EventArgs EventArgs);
+public record EventDescriptor(IContentData Content, EventArgs EventArgs);
